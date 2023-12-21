@@ -45,7 +45,7 @@ app.post('/api/insertData', async (req, res) => {
         for (const item of itemsToInsert) {
             const { id, EnglishBody, EnglishTitle, ItemRank, ItemCover, EventDate, EndDate, EventDescription, ItemDescription,Title, EventType } = item;
 
-            await connection.query('INSERT INTO events (id, EnglishBody, EnglishTitle, ItemRank, ItemCover, EventDate, EndDate, EventDescription, ItemDescription,Title,EventType) VALUES (?,?, ?, ?, ?, ?, ?, ?, ?, ?,?)', [id,Title, EnglishBody, EnglishTitle, ItemRank, ItemCover, EventDate, EndDate, EventDescription, ItemDescription,Title,EventType]);
+            await connection.query('INSERT INTO events (id, EnglishBody, EnglishTitle, ItemRank, ItemCover, EventDate, EndDate, EventDescription, ItemDescription,Title,EventType) VALUES (?,?, ?, ?, ?, ?, ?, ?, ?, ?,?)', [id, EnglishBody, EnglishTitle, ItemRank, ItemCover, EventDate, EndDate, EventDescription, ItemDescription,Title,EventType]);
         }
 
         connection.release();
