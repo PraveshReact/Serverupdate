@@ -43,9 +43,9 @@ app.post('/api/insertData', async (req, res) => {
         const connection = await dbPool.getConnection();
 
         for (const item of itemsToInsert) {
-            const { id, EnglishBody, EnglishTitle, ItemRank, ItemCover, EventDate, EndDate, EventDescription, ItemDescription } = item;
+            const { id,Title, EnglishBody, EnglishTitle, ItemRank, ItemCover, EventDate, EndDate, EventDescription, ItemDescription, EventType } = item;
 
-            await connection.query('INSERT INTO Testevents (id, EnglishBody, EnglishTitle, ItemRank, ItemCover, EventDate, EndDate, EventDescription, ItemDescription) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [id, EnglishBody, EnglishTitle, ItemRank, ItemCover, EventDate, EndDate, EventDescription, ItemDescription]);
+            await connection.query('INSERT INTO Testevents (id,Title, EnglishBody, EnglishTitle, ItemRank, ItemCover, EventDate, EndDate, EventDescription, ItemDescription,EventType) VALUES (?,?, ?, ?, ?, ?, ?, ?, ?, ?,?)', [id,Title, EnglishBody, EnglishTitle, ItemRank, ItemCover, EventDate, EndDate, EventDescription, ItemDescription,EventType]);
         }
 
         connection.release();
