@@ -57,6 +57,21 @@ app.post('/api/insertData', async (req, res) => {
     }
 });
 
+app.get('/api/getData', async (req, res) => {
+    try {
+        const connection = await dbPool.getConnection();
+
+        const result = await connection.query('SELECT * FROM Testevents');
+        const data = result[0]; // Assuming the data is in the first element of the result array
+
+        connection.release();
+
+        res.status(200).json(data);
+    } catch (error) {
+        console.error('Error retrieving data from MySQL:', error);
+        res.status(500).json({ error: 'Error retrieving data' });
+    }
+});
 
 app.listen(port, () => {
     console.log(`Server is running on port ${port}`);
