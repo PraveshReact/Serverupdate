@@ -57,11 +57,43 @@ app.post('/api/insertData', async (req, res) => {
     }
 });
 
+app.put('/api/updateData', async (req, res) => {
+    try {
+        const itemsToUpdate = req.body; // Assuming req.body is an array of items
+        const connection = await dbPool.getConnection();
+        for (const item of itemsToUpdate) {
+            const {
+                id,
+                EnglishBody,
+                EnglishTitle,
+                ItemRank,
+                ItemCover,
+                EventDate,
+                EndDate,
+                EventDescription,
+                ItemDescription,
+                Title,
+                EventType,
+            } = item;
+
+            await connection.query(
+                'UPDATE events SET EnglishBody=?, EnglishTitle=?, ItemRank=?, ItemCover=?, EventDate=?, EndDate=?, EventDescription=?, ItemDescription=?, Title=?, EventType=? WHERE id=?',
+                [EnglishBody, EnglishTitle, ItemRank, ItemCover, EventDate, EndDate, EventDescription, ItemDescription, Title, EventType, id]
+            );
+        }
+        connection.release();
+        res.status(200).json({ message: 'Data updated successfully' });
+    } catch (error) {
+        console.error('Error updating data in MySQL:', error);
+        res.status(500).json({ error: 'Error updating data' });
+    }
+});
+
 app.get('/api/getData', async (req, res) => {
     try {
         const connection = await dbPool.getConnection();
 
-        const result = await connection.query('SELECT * FROM Testevents');
+        const result = await connection.query('SELECT * FROM events');
         const data = result[0]; // Assuming the data is in the first element of the result array
 
         connection.release();
