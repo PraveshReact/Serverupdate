@@ -43,9 +43,9 @@ app.post('/api/insertData', async (req, res) => {
         const connection = await dbPool.getConnection();
 
         for (const item of itemsToInsert) {
-            const { id, EnglishBody, EnglishTitle, ItemRank, ItemCover, EventDate, EndDate, EventDescription, ItemDescription,Title, EventType } = item;
+            const { id, EnglishBody, EnglishTitle, ItemRank, ItemCover, EventDate, EndDate, EventDescription, ItemDescription,Title, EventType, Modified, Created } = item;
 
-            await connection.query('INSERT INTO events (id, EnglishBody, EnglishTitle, ItemRank, ItemCover, EventDate, EndDate, EventDescription, ItemDescription,Title,EventType) VALUES (?,?, ?, ?, ?, ?, ?, ?, ?, ?,?)', [id, EnglishBody, EnglishTitle, ItemRank, ItemCover, EventDate, EndDate, EventDescription, ItemDescription,Title,EventType]);
+            await connection.query('INSERT INTO events (id, EnglishBody, EnglishTitle, ItemRank, ItemCover, EventDate, EndDate, EventDescription, ItemDescription,Title,EventType, Modified, Created) VALUES (?,?, ?, ?, ?, ?, ?, ?, ?, ?,?,?,?)', [id, EnglishBody, EnglishTitle, ItemRank, ItemCover, EventDate, EndDate, EventDescription, ItemDescription,Title,EventType, Modified, Created]);
         }
 
         connection.release();
@@ -74,11 +74,13 @@ app.put('/api/updateData', async (req, res) => {
                 ItemDescription,
                 Title,
                 EventType,
+                Modified, 
+                Created,
             } = item;
 
             await connection.query(
-                'UPDATE events SET EnglishBody=?, EnglishTitle=?, ItemRank=?, ItemCover=?, EventDate=?, EndDate=?, EventDescription=?, ItemDescription=?, Title=?, EventType=? WHERE id=?',
-                [EnglishBody, EnglishTitle, ItemRank, ItemCover, EventDate, EndDate, EventDescription, ItemDescription, Title, EventType, id]
+                'UPDATE events SET EnglishBody=?, EnglishTitle=?, ItemRank=?, ItemCover=?, EventDate=?, EndDate=?, EventDescription=?, ItemDescription=?, Title=?, EventType=?, Modified=?, Created=? WHERE id=?',
+                [EnglishBody, EnglishTitle, ItemRank, ItemCover, EventDate, EndDate, EventDescription, ItemDescription, Title, EventType, Modified, Created, id]
             );
         }
         connection.release();
@@ -102,6 +104,20 @@ app.get('/api/getData', async (req, res) => {
     } catch (error) {
         console.error('Error retrieving data from MySQL:', error);
         res.status(500).json({ error: 'Error retrieving data' });
+    }
+});
+app.delete('/api/deleteData', async (req, res) => {
+    try {
+        const itemsToDelete = req.body; // Assuming req.body is an array of item IDs
+        const connection = await dbPool.getConnection();
+        for (const idToDelete of itemsToDelete) {
+            await connection.query('DELETE FROM events WHERE id=?', [idToDelete.id]);
+        }
+        connection.release();
+        res.status(200).json({ message: 'Data deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting data in MySQL:', error);
+        res.status(500).json({ error: 'Error deleting data' });
     }
 });
 
