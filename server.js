@@ -77,6 +77,7 @@ app.post('/api/tableCreationdata', async (req, res) => {
         // Check if the table already exists
         const tableExistsQuery = `SHOW TABLES LIKE '${tableName}'`;
         const tableExistsResult = await connection.query(tableExistsQuery);
+        console.log(tableExistsResult)
 
         if (tableExistsResult[0].length === 0) {
             // Table doesn't exist, so create it dynamically without a primary key
