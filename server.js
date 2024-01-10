@@ -7,11 +7,11 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 const dbPool = mysql.createPool({
-    host: '195.34.83.112',
+    host: '185.3.235.202',
     port: 3306,
-    user: 'hhhhadmin',
+    user: 'h187338_database',
     password: 'Ddlgn2023.',
-    database: 'ContactDatabase',
+    database: 'h187338_publicsp_gruene-washington-de',
 });
 
 app.use(bodyParser.json());
