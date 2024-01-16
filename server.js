@@ -18,53 +18,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cors());
 
-// app.post('/api/insertData', async (req, res) => {
-//     try {
-//         const {id, EnglishBody, EnglishTitle, ItemRank, ItemCover, EventDate, EndDate, EventDescription, ItemDescription } = req.body;
-
-//         //const { Title, Email, Id } = req.body; // Extract Title, Email, and Id from the request body
-
-//         const connection = await dbPool.getConnection();
-//         await connection.query('INSERT INTO Testevents (id, EnglishBody, EnglishTitle, ItemRank, ItemCover, EventDate, EndDate, EventDescription, ItemDescription) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [id, EnglishBody, EnglishTitle, ItemRank, ItemCover, EventDate, EndDate, EventDescription, ItemDescription]);
-
-//         //await connection.query('INSERT INTO Sharepoint (Title, Email, Id) VALUES (?, ?, ?)', [Title, Email, Id]);
-//         connection.release();
-
-//         res.status(200).json({ message: 'Data inserted successfully' });
-//     } catch (error) {
-//         console.error('Error inserting data into MySQL:', error);
-//         res.status(500).json({ error: 'Error inserting data' });
-//     }
-// });
-// app.post('/api/tableCreationdata', async (req, res) => {
-//     try {
-//         const itemsToInsert = req.body;
-//         if (!Array.isArray(itemsToInsert) || itemsToInsert.length === 0) {
-//             return res.status(400).json({ error: 'Invalid input data' });
-//         }
-//         const connection = await dbPool.getConnection(); 
-//         const sampleItem = itemsToInsert[0];
-//         const tableName = 'Announcements'; // Set your desired dynamic table name here
-//         const columns = Object.keys(sampleItem);
-//         // Generate the SQL CREATE TABLE statement
-//         const createTableQuery = `CREATE TABLE IF NOT EXISTS ${tableName} (${columns.map(column => `${column} longtext`).join(', ')})`;
-//         // Execute the CREATE TABLE query
-//         await connection.query(createTableQuery);
-//         for (const item of itemsToInsert) {
-//             const values = columns.map(column => item[column]);
-//             // Generate the SQL INSERT INTO statement
-//             const insertQuery = `INSERT INTO ${tableName} (${columns.join(', ')}) VALUES (${columns.map(() => '?').join(', ')})`;
-//             // Execute the INSERT INTO query
-//             await connection.query(insertQuery, values);
-//         }
-//         res.status(200).json({ message: 'Data inserted successfully' });
-//     } catch (error) {
-//         console.error('Error inserting data into SQL Server:', error);
-//         res.status(500).json({ error: 'Error inserting data' });
-//     } finally {
-//         await sql.close();
-//     }
-// });
+//------------------------------Working Code ---------------------------//
 app.post('/api/tableCreationdata', async (req, res) => {
     let connection;
     try {
@@ -77,7 +31,6 @@ app.post('/api/tableCreationdata', async (req, res) => {
         // Check if the table already exists
         const tableExistsQuery = `SHOW TABLES LIKE '${tableName}'`;
         const tableExistsResult = await connection.query(tableExistsQuery);
-        console.log(tableExistsResult)
 
         if (tableExistsResult[0].length === 0) {
             // Table doesn't exist, so create it dynamically without a primary key
@@ -116,54 +69,113 @@ app.post('/api/tableCreationdata', async (req, res) => {
     }
 });
 
-app.post('/api/tableCreationdata', async (req, res) => {
-    let connection;
-    try {
-        const { data: itemsToInsert, tableName } = req.body;
-        if (!Array.isArray(itemsToInsert) || itemsToInsert.length === 0 || !tableName) {
-            return res.status(400).json({ error: 'Invalid input data' });
-        }
-        connection = await dbPool.getConnection(); 
-        const sampleItem = itemsToInsert[0];
-        // Check if the table already exists
-        const tableExistsQuery = `SHOW TABLES LIKE '${tableName}'`;
-        const tableExistsResult = await connection.query(tableExistsQuery);
 
-        if (tableExistsResult[0].length === 0) {
-            // Table doesn't exist, so create it dynamically
-            const createTableQuery = `CREATE TABLE ${tableName} (${Object.keys(sampleItem).map(column => `${column} longtext`).join(', ')})`;
-            await connection.query(createTableQuery);
-        } else {
-            // Table already exists, dynamically adjust the schema
-            for (const column of Object.keys(sampleItem)) {
-                const columnExistsQuery = `SHOW COLUMNS FROM ${tableName} LIKE '${column}'`;
-                const columnExistsResult = await connection.query(columnExistsQuery);
+//----------try to post image as well=------------------//
+// app.post('/api/tableCreationdata', async (req, res) => {
+//     let connection;
+//     try {
+//         const { data: itemsToInsert, tableName } = req.body;
+//         if (!Array.isArray(itemsToInsert) || itemsToInsert.length === 0 || !tableName) {
+//             return res.status(400).json({ error: 'Invalid input data' });
+//         }
+//         connection = await dbPool.getConnection();
+//         const sampleItem = itemsToInsert[0];
+
+//         // Check if the table already exists
+//         const tableExistsQuery = `SHOW TABLES LIKE '${tableName}'`;
+//         const tableExistsResult = await connection.query(tableExistsQuery);
+
+//         if (tableExistsResult[0].length === 0) {
+//             // Table doesn't exist, so create it dynamically without a primary key
+//             const createTableQuery = `CREATE TABLE ${tableName} (${Object.keys(sampleItem).map(column => {
+//                 if (column === 'image') {
+//                     return `${column} LONGBLOB`; // Assuming 'image' is the name of your image column
+//                 } else {
+//                     return `${column} longtext`;
+//                 }
+//             }).join(', ')})`;
+//             await connection.query(createTableQuery);
+//         } else {
+//             // Table already exists, dynamically adjust the schema
+//             for (const column of Object.keys(sampleItem)) {
+//                 const columnExistsQuery = `SHOW COLUMNS FROM ${tableName} LIKE '${column}'`;
+//                 const columnExistsResult = await connection.query(columnExistsQuery);
+
+//                 if (columnExistsResult[0].length === 0) {
+//                     // Column doesn't exist, so add it dynamically
+//                     const addColumnQuery = `ALTER TABLE ${tableName} ADD COLUMN ${column} ${column === 'image' ? 'LONGBLOB' : 'longtext'}`;
+//                     await connection.query(addColumnQuery);
+//                 }
+//             }
+//         }
+
+//         // Insert data into the table without specifying the primary key
+//         for (const item of itemsToInsert) {
+//             const columns = Object.keys(item);
+//             const values = columns.map(column => item[column]);
+//             const insertQuery = `INSERT INTO ${tableName} (${columns.join(', ')}) VALUES (${columns.map(() => '?').join(', ')})`;
+//             await connection.query(insertQuery, values);
+//         }
+
+//         res.status(200).json({ message: 'Data inserted successfully' });
+//     } catch (error) {
+//         console.error('Error inserting data into SQL Server:', error);
+//         res.status(500).json({ error: 'Error inserting data' });
+//     } finally {
+//         if (connection) {
+//             await connection.release();
+//         }
+//     }
+// });
+
+// app.post('/api/tableCreationdata', async (req, res) => {
+//     let connection;
+//     try {
+//         const { data: itemsToInsert, tableName } = req.body;
+//         if (!Array.isArray(itemsToInsert) || itemsToInsert.length === 0 || !tableName) {
+//             return res.status(400).json({ error: 'Invalid input data' });
+//         }
+//         connection = await dbPool.getConnection(); 
+//         const sampleItem = itemsToInsert[0];
+//         // Check if the table already exists
+//         const tableExistsQuery = `SHOW TABLES LIKE '${tableName}'`;
+//         const tableExistsResult = await connection.query(tableExistsQuery);
+
+//         if (tableExistsResult[0].length === 0) {
+//             // Table doesn't exist, so create it dynamically
+//             const createTableQuery = `CREATE TABLE ${tableName} (${Object.keys(sampleItem).map(column => `${column} longtext`).join(', ')})`;
+//             await connection.query(createTableQuery);
+//         } else {
+//             // Table already exists, dynamically adjust the schema
+//             for (const column of Object.keys(sampleItem)) {
+//                 const columnExistsQuery = `SHOW COLUMNS FROM ${tableName} LIKE '${column}'`;
+//                 const columnExistsResult = await connection.query(columnExistsQuery);
                 
-                if (columnExistsResult[0].length === 0) {
-                    // Column doesn't exist, so add it dynamically
-                    const addColumnQuery = `ALTER TABLE ${tableName} ADD COLUMN ${column} longtext`;
-                    await connection.query(addColumnQuery);
-                }
-            }
-        }
+//                 if (columnExistsResult[0].length === 0) {
+//                     // Column doesn't exist, so add it dynamically
+//                     const addColumnQuery = `ALTER TABLE ${tableName} ADD COLUMN ${column} longtext`;
+//                     await connection.query(addColumnQuery);
+//                 }
+//             }
+//         }
 
-        // Insert data into the table
-        for (const item of itemsToInsert) {
-            const values = Object.keys(sampleItem).map(column => item[column]);
-            const insertQuery = `INSERT INTO ${tableName} (${Object.keys(sampleItem).join(', ')}) VALUES (${Object.keys(sampleItem).map(() => '?').join(', ')})`;
-            await connection.query(insertQuery, values);
-        }
+//         // Insert data into the table
+//         for (const item of itemsToInsert) {
+//             const values = Object.keys(sampleItem).map(column => item[column]);
+//             const insertQuery = `INSERT INTO ${tableName} (${Object.keys(sampleItem).join(', ')}) VALUES (${Object.keys(sampleItem).map(() => '?').join(', ')})`;
+//             await connection.query(insertQuery, values);
+//         }
 
-        res.status(200).json({ message: 'Data inserted successfully' });
-    } catch (error) {
-        console.error('Error inserting data into SQL Server:', error);
-        res.status(500).json({ error: 'Error inserting data' });
-    } finally {
-        if (connection) {
-            await connection.release();
-        }
-    }
-});
+//         res.status(200).json({ message: 'Data inserted successfully' });
+//     } catch (error) {
+//         console.error('Error inserting data into SQL Server:', error);
+//         res.status(500).json({ error: 'Error inserting data' });
+//     } finally {
+//         if (connection) {
+//             await connection.release();
+//         }
+//     }
+// });
 
 app.post('/api/insertData', async (req, res) => {
     try { 
