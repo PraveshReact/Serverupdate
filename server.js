@@ -28,13 +28,20 @@ app.post('/api/tableCreationdata', async (req, res) => {
         }
         connection = await dbPool.getConnection();
         const sampleItem = itemsToInsert[0];
+
         // Check if the table already exists
         const tableExistsQuery = `SHOW TABLES LIKE '${tableName}'`;
         const tableExistsResult = await connection.query(tableExistsQuery);
 
         if (tableExistsResult[0].length === 0) {
             // Table doesn't exist, so create it dynamically without a primary key
-            const createTableQuery = `CREATE TABLE ${tableName} (${Object.keys(sampleItem).map(column => `${column} longtext`).join(', ')})`;
+            const createTableQuery = `CREATE TABLE ${tableName} (${Object.keys(sampleItem).map(column => {
+                if (column === 'image') {
+                    return `${column} LONGBLOB`; // Assuming 'image' is the name of your image column
+                } else {
+                    return `${column} longtext`;
+                }
+            }).join(', ')})`;
             await connection.query(createTableQuery);
         } else {
             // Table already exists, dynamically adjust the schema
@@ -44,7 +51,7 @@ app.post('/api/tableCreationdata', async (req, res) => {
 
                 if (columnExistsResult[0].length === 0) {
                     // Column doesn't exist, so add it dynamically
-                    const addColumnQuery = `ALTER TABLE ${tableName} ADD COLUMN ${column} longtext`;
+                    const addColumnQuery = `ALTER TABLE ${tableName} ADD COLUMN ${column} ${column === 'image' ? 'LONGBLOB' : 'longtext'}`;
                     await connection.query(addColumnQuery);
                 }
             }
@@ -192,41 +199,6 @@ app.get('/api/getData', async (req, res) => {
     }
 });
 
-// app.get('/api/getData', async (req, res) => {
-//     try {
-//         const connection = await dbPool.getConnection();
-
-//         // Retrieve column names from the table
-//         const columnsResult = await connection.query('SHOW COLUMNS FROM events');
-//         const columns = columnsResult[0].map(column => column.Field);
-
-//         // Use the column names to build the SELECT query
-//         const selectQuery = `SELECT ${columns.join(', ')} FROM events`;
-
-//         // Execute the SELECT query
-//         const result = await connection.query(selectQuery);
-//         const data = result[0]; // Assuming the data is in the first element of the result array
-
-//         connection.release();
-//         res.status(200).json(data);
-//     } catch (error) {
-//         console.error('Error retrieving data from MySQL:', error);
-//         res.status(500).json({ error: 'Error retrieving data' });
-//     }
-// });
-
-// app.get('/api/getData', async (req, res) => {
-//     try {
-//         const connection = await dbPool.getConnection();
-//         const result = await connection.query('SELECT * FROM events');
-//         const data = result[0]; // Assuming the data is in the first element of the result array
-//         connection.release();
-//         res.status(200).json(data);
-//     } catch (error) {
-//         console.error('Error retrieving data from MySQL:', error);
-//         res.status(500).json({ error: 'Error retrieving data' });
-//     }
-// });
 app.delete('/api/deleteData', async (req, res) => {
     try {
         const { data: itemsToDelete, tableName } = req.body; // Assuming req.body is an array of item IDs
