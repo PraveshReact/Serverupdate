@@ -4,7 +4,7 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 4000;
 
 const dbPool = mysql.createPool({
     host: '185.3.235.202',
@@ -198,6 +198,31 @@ app.get('/api/getData', async (req, res) => {
         res.status(500).json({ error: 'Error retrieving data' });
     }
 });
+
+app.get('/api/getDataFilterbase', async (req, res) => {
+    try {
+        // Extract the table name and title from the query parameters
+        const { table, Title } = req.query;
+        if (!table || !Title) {
+            return res.status(400).json({ error: 'Table name and Title are required' });
+        }
+        const connection = await dbPool.getConnection();
+        // Retrieve column names from the specified table
+        const columnsResult = await connection.query(`SHOW COLUMNS FROM ${table}`);
+        const columns = columnsResult[0].map(column => column.Field);
+        // Use the column names to build the SELECT query with a WHERE clause for the title
+        const selectQuery = `SELECT ${columns.join(', ')} FROM ${table} WHERE Title = ?`;
+        // Execute the SELECT query with the Title parameter
+        const result = await connection.query(selectQuery, [Title]);
+        const data = result[0]; // Assuming the data is in the first element of the result array
+        connection.release();
+        res.status(200).json(data);
+    } catch (error) {
+        console.error('Error retrieving data from MySQL:', error);
+        res.status(500).json({ error: 'Error retrieving data' });
+    }
+});
+
 
 app.delete('/api/deleteData', async (req, res) => {
     try {
