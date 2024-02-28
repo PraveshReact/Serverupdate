@@ -8,7 +8,7 @@ const app = express();
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
 
-const port = process.env.PORT || 4000;
+const port = process.env.PORT || 3000;
 
 const dbPool = mysql.createPool({
     host: '185.3.235.202',
