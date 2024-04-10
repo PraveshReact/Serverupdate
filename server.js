@@ -1,14 +1,30 @@
 const express = require('express');
+const multer = require('multer');
+const path = require('path');
 const mysql = require('mysql2/promise');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 
 const app = express();
 // Increase the limit for request size (e.g., 10MB)
-app.use(bodyParser.json({ limit: '10mb' }));
-app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
+app.use(bodyParser.json({ limit: '500mb' }));
+app.use(bodyParser.urlencoded({ extended: true, limit: '500mb' }));
 
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 4000;
+
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+      cb(null, 'uploads/');
+    },
+    filename: function (req, file, cb) {
+      cb(null, Date.now() + '-' + file.originalname);
+    }
+  });
+  
+  const upload = multer({ dest: 'uploads/' });
+
+  
+  app.use('/uploads', express.static('uploads'));
 
 const dbPool = mysql.createPool({
     host: '185.3.235.202',
@@ -134,8 +150,6 @@ app.post('/api/tableCreationdata', async (req, res) => {
         }
     }
 });
-
-
 
 //----------try to post image as well=------------------//
 // app.post('/api/tableCreationdata', async (req, res) => {
@@ -282,6 +296,97 @@ app.get('/api/getDataFilterbase', async (req, res) => {
         res.status(500).json({ error: 'Error retrieving data' });
     }
 });
+app.get('/api/getDataFilterItemRank', async (req, res) => {
+    try {
+        // Extract the table name and item rank from the query parameters
+        const { table, ItemRank } = req.query;
+        if (!table || !ItemRank) {
+            return res.status(400).json({ error: 'Table name and ItemRank are required' });
+        }
+        const connection = await dbPool.getConnection();
+        // Retrieve column names from the specified table
+        const columnsResult = await connection.query(`SHOW COLUMNS FROM ${table}`);
+        const columns = columnsResult[0].map(column => column.Field);
+        // Use the column names to build the SELECT query with a WHERE clause for the item rank
+        const selectQuery = `SELECT ${columns.join(', ')} FROM ${table} WHERE ItemRank = ?`;
+        // Execute the SELECT query with the ItemRank parameter
+        const result = await connection.query(selectQuery, [ItemRank]);
+        const data = result[0]; // Assuming the data is in the first element of the result array
+        connection.release();
+        res.status(200).json(data);
+    } catch (error) {
+        console.error('Error retrieving data from MySQL:', error);
+        res.status(500).json({ error: 'Error retrieving data' });
+    }
+});
+
+//---------------------getSmartPagewebpartData-------------------//
+app.get('/api/getDataFilterSmartPageId', async (req, res) => {
+    try {
+        const { table, SmartPagesId } = req.query;
+        if (!table || !SmartPagesId) {
+            return res.status(400).json({ error: 'Table name and SmartPagesId are required' });
+        }
+
+        const connection = await dbPool.getConnection();
+
+        const columnsResult = await connection.query(`SHOW COLUMNS FROM ${table}`);
+        const columns = columnsResult[0].map(column => column.Field);
+
+        // Check if the SmartPagesId column exists in the table
+        if (!columns.includes('SmartPagesId')) {
+            return res.status(400).json({ error: 'SmartPagesId column does not exist in the table' });
+        }
+
+        // Build the SELECT query to fetch rows where SmartPagesId contains the specified value
+        const selectQuery = `SELECT ${columns.join(', ')} FROM ${table} WHERE SmartPagesId LIKE ?`;
+
+        // Construct the search pattern for the JSON array-like string
+        const searchPattern = `%[${SmartPagesId}]%`;
+
+        console.log('Select Query:', selectQuery);
+        console.log('Search Pattern:', searchPattern);
+
+        const result = await connection.query(selectQuery, [searchPattern]);
+
+        const data = result[0];
+        connection.release();
+
+        console.log('Retrieved Data:', data);
+        res.status(200).json(data);
+    } catch (error) {
+        console.error('Error retrieving data from MySQL:', error);
+        res.status(500).json({ error: 'Error retrieving data' });
+    }
+});
+
+
+
+
+// app.get('/api/getDataFilterSmartPageId', async (req, res) => {
+//     try {
+//         // Extract the table name and smart Pages from the query parameters
+//         const { table, SmartPagesId } = req.query;
+//         if (!table || !SmartPagesId) {
+//             return res.status(400).json({ error: 'Table name and SmartPages are required' });
+//         }
+//         const connection = await dbPool.getConnection();
+//         // Retrieve column names from the specified table
+//         const columnsResult = await connection.query(`SHOW COLUMNS FROM ${table}`);
+//         const columns = columnsResult[0].map(column => column.Field);
+//         // Use the column names to build the SELECT query with a WHERE clause for the smart Pages
+//         const selectQuery = `SELECT ${columns.join(', ')} FROM ${table} WHERE SmartPagesId = ?`;
+//         // Execute the SELECT query with the SmartPages parameter
+//         const result = await connection.query(selectQuery, [SmartPagesId]);
+//         const data = result[0]; // Assuming the data is in the first element of the result array
+//         connection.release();
+//         res.status(200).json(data);
+//     } catch (error) {
+//         console.error('Error retrieving data from MySQL:', error);
+//         res.status(500).json({ error: 'Error retrieving data' });
+//     }
+// });
+
 app.get('/api/getFilterKeyTitle', async (req, res) => {
     try {
         // Extract the table name and title from the query parameters
@@ -306,7 +411,6 @@ app.get('/api/getFilterKeyTitle', async (req, res) => {
     }
 });
 
-
 app.delete('/api/deleteData', async (req, res) => {
     try {
         const { data: itemsToDelete, tableName } = req.body; // Assuming req.body is an array of item IDs
@@ -321,6 +425,277 @@ app.delete('/api/deleteData', async (req, res) => {
         res.status(500).json({ error: 'Error deleting data' });
     }
 });
+
+
+//------------IdBaseFilter------------------//
+app.get('/api/getDataFilterId', async (req, res) => {
+    try {
+        // Extract the table name and title from the query parameters
+        const { table, id } = req.query;
+        if (!table || !id) {
+            return res.status(400).json({ error: 'Table name and id are required' });
+        }
+        const connection = await dbPool.getConnection();
+        // Retrieve column names from the specified table
+        const columnsResult = await connection.query(`SHOW COLUMNS FROM ${table}`);
+        const columns = columnsResult[0].map(column => column.Field);
+        // Use the column names to build the SELECT query with a WHERE clause for the id
+        const selectQuery = `SELECT ${columns.join(', ')} FROM ${table} WHERE id = ?`;
+        // Execute the SELECT query with the id parameter
+        const result = await connection.query(selectQuery, [id]);
+        const data = result[0]; // Assuming the data is in the first element of the result array
+        connection.release();
+        res.status(200).json(data);
+    } catch (error) {
+        console.error('Error retrieving data from MySQL:', error);
+        res.status(500).json({ error: 'Error retrieving data' });
+    }
+});
+
+// app.post('/upload', upload.single('image'), async (req, res) => {
+//     const { filename } = req.file;
+//     const imagePath = `uploads/${filename}`;
+//     const connection = await dbPool.getConnection();
+//     const sql = 'INSERT INTO images (image_path) VALUES (?)';
+//     connection.query(sql, [imagePath], (err, result) => {
+//       if (err) {
+//         console.error('Error uploading image:', err);
+//         res.status(500).json({ error: 'Failed to upload image' });
+//       } else {
+//         console.log('Image uploaded successfully');
+//         res.status(200).json({ message: 'Image uploaded successfully' });
+//       }
+//     });
+//   });/
+
+
+const fs = require('fs');
+
+// app.post('/upload', upload.single('image'), async (req, res) => {
+//     try {
+//         const originalName = req.file.originalname; // Get the original filename
+//         const imagePath = req.file.path; // Path to the uploaded image
+
+//         // Read the image file
+//         const imageBuffer = fs.readFileSync(imagePath);
+
+//         // Insert the image data into the database
+//         const connection = await dbPool.getConnection();
+//         const sql = 'INSERT INTO images (data, imageName) VALUES (?, ?)';
+//         connection.query(sql, [imageBuffer, originalName], (err, result) => {
+//             if (err) {
+//                 console.error('Error uploading image:', err);
+//                 res.status(500).json({ error: 'Failed to upload image' });
+//             } else {
+//                 console.log('Image uploaded successfully');
+//                 res.status(200).json({ message: 'Image uploaded successfully' });
+//             }
+//         });
+
+//         // Remove the temporary file
+//         fs.unlinkSync(imagePath);
+//     } catch (error) {
+//         console.error('Error uploading image:', error);
+//         res.status(500).json({ error: 'Failed to upload image' });
+//     }
+// });
+
+app.post('/upload', upload.array('image', 200), async (req, res) => {
+    try {
+        const files = req.files; // Get the array of files
+
+        // Process each uploaded file
+        for (const file of files) {
+            const originalName = file.originalname; // Get the original filename
+            const imagePath = file.path; // Path to the uploaded image
+
+            // Read the image file
+            const imageBuffer = fs.readFileSync(imagePath);
+
+            // Insert the image data into the database
+            const connection = await dbPool.getConnection();
+            const sql = 'INSERT INTO images (data, imageName) VALUES (?, ?)';
+            connection.query(sql, [imageBuffer, originalName], (err, result) => {
+                if (err) {
+                    console.error('Error uploading image:', err);
+                    res.status(500).json({ error: 'Failed to upload image' });
+                } else {
+                    console.log('Image uploaded successfully');
+                }
+                connection.release();
+            });
+
+            // Remove the temporary file
+            fs.unlinkSync(imagePath);
+        }
+
+        res.status(200).json({ message: 'Images uploaded successfully' });
+    } catch (error) {
+        console.error('Error uploading images:', error);
+        res.status(500).json({ error: 'Failed to upload images' });
+    }
+});
+
+
+// app.get('/images', async (req, res) => {
+//     try {
+//         // Retrieve all image records from the database
+//         const connection = await dbPool.getConnection();
+//         const sql = 'SELECT id, data,imageName FROM images';
+//         const [rows, fields] = await connection.execute(sql);
+//         connection.release();
+
+//         // If there are no image records, return an empty response
+//         if (rows.length === 0) {
+//             return res.status(404).send('No images found');
+//         }
+
+//         // Create an array to store image objects
+//         const imageArray = [];
+
+//         // Loop through each image record
+//         rows.forEach(row => {
+//             try {
+//                 // Convert the BLOB data into a Base64 string
+//                 const imageBase64 = row.data.toString('base64');
+
+//                 // Create an object for each image record
+//                 const imageObject = {
+//                     id: row.id,
+//                     data: 'data:image/png;base64,' + imageBase64,
+//                     imageName: row.imageName
+//                 };
+
+//                 // Push the object to the array
+//                 imageArray.push(imageObject);
+//             } catch (conversionError) {
+//                 console.error('Error converting image data:', conversionError);
+//                 res.status(500).send('Internal Server Error');
+//             }
+//         });
+
+//         // Send the array of image objects as JSON response
+//         res.json(imageArray);
+//     } catch (error) {
+//         console.error('Error fetching images:', error);
+//         res.status(500).send('Internal Server Error');
+//     }
+// });
+
+app.get('/images', async (req, res) => {
+    try {
+        // Retrieve image records from the database with pagination
+        const { page = 1, perPage = 10 } = req.query;
+        const offset = (page - 1) * perPage;
+
+        const connection = await dbPool.getConnection();
+        const sql = 'SELECT id, data, imageName FROM images LIMIT ? OFFSET ?';
+        const [rows] = await connection.execute(sql, [parseInt(perPage), parseInt(offset)]);
+        connection.release();
+
+        // If there are no image records, return a 404 response
+        if (rows.length === 0) {
+            return res.status(404).send('No images found');
+        }
+
+        // Map rows to image objects asynchronously
+        const imageArray = await Promise.all(rows.map(async (row) => {
+            try {
+                // Convert the BLOB data into a Base64 string asynchronously
+                const imageBase64 = row.data.toString('base64');
+
+                // Create an object for each image record
+                return {
+                    id: row.id,
+                    data: 'data:image/png;base64,' + imageBase64,
+                    imageName: row.imageName
+                };
+            } catch (conversionError) {
+                console.error('Error converting image data:', conversionError);
+                // Return a placeholder image object
+                return {
+                    id: row.id,
+                    data: null,
+                    imageName: row.imageName
+                };
+            }
+        }));
+
+        // Send the array of image objects as JSON response
+        res.json(imageArray);
+    } catch (error) {
+        console.error('Error fetching images:', error);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+
+// app.post('/upload', upload.single('image'), async (req, res) => {
+//     try {
+//         const originalName = req.file.originalname; // Get the original filename
+//         const folderName = path.dirname(req.file.path); // Dynamically fetch folder name
+//         const imagePath = `${folderName}/${originalName}`; // Concatenate folder name with filename
+
+//         // Insert the original filename and imagePath into the database
+//         const connection = await dbPool.getConnection();
+//         const sql = 'INSERT INTO images (image_path) VALUES (?)';
+//         connection.query(sql, [imagePath], (err, result) => {
+//             if (err) {
+//                 console.error('Error uploading image:', err);
+//                 res.status(500).json({ error: 'Failed to upload image' });
+//             } else {
+//                 console.log('Image uploaded successfully');
+//                 res.status(200).json({ message: 'Image uploaded successfully' });
+//             }
+//         });
+//     } catch (error) {
+//         console.error('Error uploading image:', error);
+//         res.status(500).json({ error: 'Failed to upload image' });
+//     }
+// });
+
+  
+//   app.get('/images', async (req, res) => {
+//     try {
+//       const connection = await dbPool.getConnection();
+//       const [results, fields] = await connection.query('SELECT image_path FROM images');
+//       const imagePaths = results.map(result => result.image_path);
+//       res.status(200).json({ images: imagePaths });
+//     } catch (error) {
+//       console.error('Error retrieving images:', error);
+//       res.status(500).json({ error: 'Failed to retrieve images' });
+//     }
+//   });
+  app.post('/api/formData', async (req, res) => {
+    try {
+        // Extract data from request body
+        const { data, tableName } = req.body;
+        const { Country, Occupation, GrueneWeltweitInterested, Name, Email } = data;
+
+        // SQL query to insert data into specified table
+        const sql = `INSERT INTO ${tableName} (Country, Occupation, GrueneWeltweitInterested, Name, Email) 
+                     VALUES (?, ?, ?, ?, ?)`;
+        const values = [Country, Occupation, GrueneWeltweitInterested, Name, Email];
+        
+        // Get a connection from the pool
+        const connection = await dbPool.getConnection();
+        
+        // Execute the SQL query and wait for it to complete
+        await connection.query(sql, values);
+
+        // Release the connection back to the pool
+        connection.release();
+
+        console.log('Data inserted successfully');
+        // Send the response back to the client
+        return res.status(200).json({ message: 'Data inserted successfully' });
+    } catch (error) {
+        console.error('Error inserting data:', error);
+        // If an error occurs, send an error response back to the client
+        return res.status(500).json({ message: 'Error inserting data' });
+    }
+});
+
 
 app.listen(port, () => {
     console.log(`Server is running on port ${port}`);
