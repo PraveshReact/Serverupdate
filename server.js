@@ -416,7 +416,7 @@ app.delete('/api/deleteData', async (req, res) => {
         const { data: itemsToDelete, tableName } = req.body; // Assuming req.body is an array of item IDs
         const connection = await dbPool.getConnection();
         for (const idToDelete of itemsToDelete) {
-            await connection.query(`DELETE FROM ${tableName} WHERE id=?`, [idToDelete.id]);
+            await connection.query(`DELETE FROM ${tableName} WHERE id=?`, [idToDelete]);
         }
         connection.release();
         res.status(200).json({ message: 'Data deleted successfully' });
