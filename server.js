@@ -30,7 +30,7 @@ const dbPool = mysql.createPool({
     host: '185.3.235.202',
     port: 3306,
     user: 'h187338_database',
-    password: 'Ddlgn2023.',
+    password: 'Gruene_HHH_1124',
     database: 'h187338_publicsp_gruene-washington-de',
 });
 
