@@ -27,11 +27,11 @@ const storage = multer.diskStorage({
   app.use('/uploads', express.static('uploads'));
 
 const dbPool = mysql.createPool({
-    host: '185.3.235.202',
+    host: '195.34.83.112',
     port: 3306,
-    user: 'h187338_database',
-    password: 'Gruene_HHH_1124',
-    database: 'h187338_publicsp_gruene-washington-de',
+    user: 'GRUENE_DB_USER',
+    password: '@8T2tu12f',
+    database: 'h16635_publicsp_gruene-washington-de',
 });
 
 app.use(bodyParser.json());
