@@ -29,7 +29,7 @@ const storage = multer.diskStorage({
 const dbPool = mysql.createPool({
     host: '195.34.83.112',
     port: 3306,
-    user: 'GRUENE_DB_USER',
+    user: 'gruene_db_user',
     password: '@8T2tu12f',
     database: 'h16635_publicsp_gruene-washington-de',
 });
